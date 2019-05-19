@@ -1,0 +1,49 @@
+version: '3'
+
+services:
+  api_gateway:
+    container_name: api_gateway
+    hostname: api_gateway
+    build:
+      context: ./api-gateway
+      dockerfile: ./Dockerfile
+    env_file:
+      - './api-gateway/local.env'
+    volumes:
+      - ./api-gateway/src:/var/www/astra-store/api-gateway/src
+    ports:
+      - '5000:5000'
+    expose:
+      - '5000'
+    depends_on:
+      - rabbitmq_server
+  rabbitmq_server:
+    container_name: rabbitmq_server
+    hostname: rabbitmq_server
+    image: 'bitnami/rabbitmq:latest'
+    environment:
+      - RABBITMQ_USERNAME=astra_user
+      - RABBITMQ_PASSWORD=astra_password
+  users_service_db:
+    container_name: users_service_db
+    hostname: users_service_db
+    image: mongo
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root
+  users_service:
+    container_name: users_service
+    hostname: users_service
+    build:
+      context: users-service
+      dockerfile: ./Dockerfile
+    env_file: './users-service/local.env'
+    volumes:
+      - ./users-service/src:/var/www/astra-store/users-service/src
+    depends_on:
+      - users_service_db
+      - rabbitmq_server
+
+volumes:
+  api_gateway:
+  users_service:
